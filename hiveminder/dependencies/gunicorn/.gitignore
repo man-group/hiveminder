@@ -1,0 +1,15 @@
+*.pyc
+__pycache__
+MANIFEST
+build
+dist
+setuptools-*
+*.so
+*.egg
+*.egg-info
+nohup.out
+.coverage
+examples/frameworks/pylonstest/PasteScript*
+examples/frameworks/pylonstest/pylonstest.egg-info/
+examples/frameworks/django/testing/testdb.sql
+.tox

@@ -1,0 +1,4 @@
+pytest
+mock
+coverage
+pytest-cov

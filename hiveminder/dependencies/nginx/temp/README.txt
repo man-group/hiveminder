@@ -1,0 +1,1 @@
+This folder is required for nginx temp files

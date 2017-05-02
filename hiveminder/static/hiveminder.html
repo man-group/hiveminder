@@ -1,0 +1,197 @@
+<html>
+<head>
+
+<link href="/static/js/jquery-ui-1.11.4.custom/jquery-ui.css" rel="stylesheet">
+<link rel="stylesheet" type="text/css" href="/static/css/hiveminder.css">
+
+<script src="/static/js/jquery-1.11.1.js"></script>
+<script src="/static/js/jquery-ui-1.11.4.custom/jquery-ui.js"></script>
+
+<script src="/static/js/hiveminder.js"></script>
+<title>hiveminder</title>
+</head>
+<body>
+
+<div id="boardbox">
+<img id="title" src="/static/img/hiveminder.png">
+<div id="board"></div>
+<div id="turnboard" class="score"><h1>Turn</h1><h1 id="turn">0</h1></div>
+
+<div id="scoreboard" class="score">
+<div id='algoname'></div>
+<h1>Score</h1>
+<h1 id="score">0</h1>
+<table>
+<thead>
+<tr>
+<td></td>
+<th>#</th>
+<th>pts</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<th>hives</th>
+<td id='nhives'>0</td>
+<td id='phives'>0</td>
+</tr>
+<tr>
+<th>flowers</th>
+<td id='nflowers'>0</td>
+<td id='pflowers'>0</td>
+</tr>
+<tr>
+<th>dead bees</th>
+<td id='ndeadbees'>0</td>
+<td id='pdeadbees'>0</td>
+</tr>
+<tr>
+<th>nectar</th>
+<td id='nnectar'>0</td>
+<td id='pnectar'>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+
+<div id="multiscoreboard" class="score">
+<h1>Scores</h1>
+<table>
+</table>
+</div>
+
+<div id="exit" title="Exit Game">X</div>
+<div id="info" title="Rule Summary">i</div>
+
+<div id="human-input">
+<div class="title">Your turn!</div>
+<div class="body">Click on a bee to change its heading or <button id="human-skip">skip</button>.</div>
+</div>
+
+</div>
+
+<div id="infopopup" title="Rules">
+<br>
+<b>WIN</b> by having the highest number of points after 10 games of 10,000 moves.<br><br>
+
+You have control of all game pieces on your board. <br>
+That includes game pieces that just appeared from a neighbour - and excludes game pieces that just flew off to a neighbour!<br><br>
+<table border="1">
+<tr>
+	<td><div><img src="/static/img/hive.png"></div></td>
+	<td><b>HIVES</b></td>
+	<td>Worth 200pts. Randomly produce Bees.
+	</td>
+</tr>
+<tr>
+	<td><div><img src="/static/img/bee60.png"></div></td>
+	<td><b>BEES</b></td>
+	<td>Can be rotated by 60&deg, but otherwise continue on in the same direction.<br>
+		Carry nectar (up to 5 at a time).<br>
+		Gain energy by visiting a flower. Die if they run out of energy. <br>
+		Die if they collide with another bee (-3pts per bee).
+	</td>
+</tr>
+<tr>
+	<td><div><img src="/static/img/flower2.png"></div></td>
+	<td><b>FLOWERS</b></td>
+	<td>Worth 50pts. Give nectar to bees (worth 2pts when dropped back at a hive).<br>
+		Gain potency with numerous bee visits - more potent flowers give out more nectar per visit.<br>
+		Die after 300 moves, although every visit from a bee increases their lifespan by 10 moves.
+	</td>
+</tr>
+<tr>
+	<td><div><img src="/static/img/queenbee60.png"></div></td>
+	<td><b>QUEEN BEES</b></td>
+	<td>Created by hives - cost 100 pieces of nectar.<br>
+	    Behave exactly like regular bees but they also have the ability to drop a new hive.
+	</td>
+</tr>
+<tr>
+	<td><div><img src="/static/img/seed.png"></div></td>
+	<td><b>SEEDS</b></td>
+	<td>Created by flowers when visited by bees a multiple of 10 times.<br>
+		Travel like bees (can be rotated, but otherwise continue on in the same direction).<br>
+		Chosing to drop them on a tile creates a new flower.</td>
+</tr>
+</table>
+</div>
+
+<div id="newgame" title="New Game">
+<table class="settings">
+<tr>
+<td class="name">Player 1:</td>
+<td class="value"><select id="player1_algo">
+<option value="Not a robot!">Human</option>
+</select></td>
+</tr>
+<tr>
+<td class="name">Board size:</td>
+<td class="value"><input id="boardwidth" type="number" min="4" max="16" value="8" step="2" readonly> x <input id="boardheight" type="number" min="5" max="15" value="8" readonly></td>
+</tr>
+<tr>
+<td class="name">Game length:</td>
+<td class="value"><input id="nmoves" type="number" min="500" max="50000" value="1000" step="100" readonly></td>
+</tr>
+<tr>
+<td class="name">Options:</td>
+<td>
+<input id="multiplayer" type="checkbox">Multiplayer</input>
+<input id="turbo" type="checkbox">Turbo</input>
+</td>
+</tr>
+</table>
+</div>
+
+<div id="gameover" title="Game Over"></div>
+<pre id="error" title="Error"></pre>
+
+<div id="exitpopup" title="Exit Game">Are you sure you want to end the game?</div>
+
+<div style="visibility: hidden">
+<img src="/static/img/collided.png">
+<img src="/static/img/exhausted.png">
+<img src="/static/img/hivecmd.png">
+<img src="/static/img/flowercmd.png">
+<img src="/static/img/flower1.png">
+<img src="/static/img/flower2.png">
+<img src="/static/img/flower3.png">
+<img src="/static/img/flowerx.png">
+<img src="/static/img/headon0.png">
+<img src="/static/img/headon60.png">
+<img src="/static/img/headon-60.png">
+<img src="/static/img/headon120.png">
+<img src="/static/img/headon-120.png">
+<img src="/static/img/headon180.png">
+<img src="/static/img/hive.png">
+<img src="/static/img/hivelanded.png">
+<img src="/static/img/selected.png">
+<img src="/static/img/neighbour1.png">
+<img src="/static/img/neighbour2.png">
+<img src="/static/img/neighbour3.png">
+<img src="/static/img/neighbour4.png">
+<img src="/static/img/neighbour5.png">
+<img src="/static/img/neighbour6.png">
+<img src="/static/img/bee0.png">
+<img src="/static/img/bee60.png">
+<img src="/static/img/bee-60.png">
+<img src="/static/img/bee120.png">
+<img src="/static/img/bee-120.png">
+<img src="/static/img/bee180.png">
+<img src="/static/img/seed180.png">
+<img src="/static/img/seed0.png">
+<img src="/static/img/seed60.png">
+<img src="/static/img/seed-60.png">
+<img src="/static/img/seed120.png">
+<img src="/static/img/seed-120.png">
+<img src="/static/img/seed180.png">
+<img src="/static/img/queenbee0.png">
+<img src="/static/img/queenbee60.png">
+<img src="/static/img/queenbee-60.png">
+<img src="/static/img/queenbee120.png">
+<img src="/static/img/queenbee-120.png">
+<img src="/static/img/queenbee180.png">
+</div>
+
+</body>
+</html>
