@@ -2,7 +2,7 @@ from __future__ import absolute_import
 from .app import app, json, request
 from .game import initialise_game
 from .game_state import GameState
-from .game_params import DEFAULT_GAME_PARAMETERS
+from .game_params import DEFAULT_GAME_PARAMETERS, BEE_TRAP_GAME_PARAMETERS
 from traceback import format_exc
 
 
@@ -17,7 +17,12 @@ def newgame():
         num_flowers = data["flowers"]
         game_length = data["moves"]
         
-        game_state = initialise_game(DEFAULT_GAME_PARAMETERS,
+        if data["beeTraps"]:
+            game_params = BEE_TRAP_GAME_PARAMETERS
+        else:
+            game_params=  DEFAULT_GAME_PARAMETERS
+        
+        game_state = initialise_game(game_params,
                                      boards,
                                      board_width,
                                      board_height,

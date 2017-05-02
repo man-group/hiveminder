@@ -39,7 +39,26 @@ DEFAULT_GAME_PARAMETERS = GameParameters(launch_probability=0.2,
                                          flower_visit_potency_ratio=10,
                                          flower_lifespan=300,
                                          flower_lifespan_visit_impact=10,
-                                         trap_seed_probability=0.5,
+                                         trap_seed_probability=0.0,
                                          venus_score_factor=-50,
                                          trap_seed_lifespan=6
                                          )
+
+BEE_TRAP_GAME_PARAMETERS = GameParameters(launch_probability=0.2,
+                                          initial_energy=10,
+                                          dead_bee_score_factor=-3,
+                                          hive_score_factor=200,
+                                          flower_score_factor=50,
+                                          nectar_score_factor=2,
+                                          queen_bee_nectar_threshold=100,
+                                          bee_nectar_capacity=5,
+                                          bee_energy_boost_per_nectar=25,
+                                          flower_seed_visit_initial_threshold=10,
+                                          flower_seed_visit_subsequent_threshold=10,
+                                          flower_visit_potency_ratio=10,
+                                          flower_lifespan=300,
+                                          flower_lifespan_visit_impact=10,
+                                          trap_seed_probability=0.5,
+                                          venus_score_factor=-50,
+                                          trap_seed_lifespan=6
+                                          )

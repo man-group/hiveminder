@@ -724,7 +724,8 @@ function start() {
             boardHeight: parseInt($("#boardheight")[0].value),
             moves: parseInt($("#nmoves")[0].value),
             hives: 1,
-            flowers: 1
+            flowers: 1,
+            beeTraps: $("#beetraps").is(':checked')
         }),
         cache: false,
         crossDomain: false,
