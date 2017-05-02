@@ -8,7 +8,8 @@ from itertools import combinations_with_replacement
 import pytest
 from mock import sentinel
 from .test_bee import BEE_TYPES
-from hiveminder.flower import Flower
+from hiveminder.venus_bee_trap import VenusBeeTrap
+from hiveminder.trap_seed import TrapSeed
 
 
 # There are at most 6 bees in these test cases, so parametrise tests with the different combinations of Bee types
@@ -55,6 +56,29 @@ from hiveminder.flower import Flower
                                             {"seeds": {0: Seed(5, 5, 0), 1: Seed(5, 5, 180)}},
                                             {"seeds": {0: Seed(5, 5, 0), 1: Seed(5, 5, -120)}},
                                             {"seeds": {0: Seed(5, 5, 0), 1: Seed(5, 5, -60)}},
+                                            # TrapSeed/Seeds same cell same direction
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: Seed(5, 5, 0)}},
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: Seed(5, 5, 0), 2: Seed(5, 5, 0)}},
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: Seed(5, 5, 0), 2: Seed(6, 6, 0), 3: Seed(6, 6, 0)}},
+                                            # TrapSeed/Seeds same cell different directions
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: Seed(5, 5, 60)}},
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: Seed(5, 5, 120)}},
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: Seed(5, 5, 180)}},
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: Seed(5, 5, -120)}},
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: Seed(5, 5, -60)}},
+                                            # TrapSeed same cell same direction
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: TrapSeed(5, 5, 0, 5)}},
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: TrapSeed(5, 5, 0, 5), 2: TrapSeed(5, 5, 0, 5)}},
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: TrapSeed(5, 5, 0, 5), 2: TrapSeed(6, 6, 0, 5), 3: TrapSeed(6, 6, 0, 5)}},
+                                            # TrapSeed same cell different directions
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: TrapSeed(5, 5, 60, 5)}},
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: TrapSeed(5, 5, 120, 5)}},
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: TrapSeed(5, 5, 180, 5)}},
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: TrapSeed(5, 5, -120, 5)}},
+                                            {"seeds": {0: TrapSeed(5, 5, 0, 5), 1: TrapSeed(5, 5, -60, 5)}},
+                                            # Gobbled by Venus Bee Trap
+                                            {"gobbled": {0: (9, 9, 0, 10, 0)}},
+                                            {"gobbled": {0: (9, 9, 0, 10, 0), 1: (9, 9, 0, 10, 0)}},
                                             ])
 @pytest.mark.parametrize("noncrash_volant_specs", [
                                             # Bees
@@ -79,7 +103,7 @@ def test_detect_crashes(bee_types, crash_board, noncrash_board, crashing_volant_
                      board_width=sentinel.board_width,
                      board_height=sentinel.board_height,
                      hives=[[Hive(0, 0, 0)]] * 2,
-                     flowers=[[]] * 2,
+                     flowers=[[VenusBeeTrap(9, 9, DEFAULT_GAME_PARAMETERS)]] * 2,
                      game_length=sentinel.game_length)
 
     def apply_bee_type_to_specs(bees_specs):
@@ -103,23 +127,24 @@ def test_detect_crashes(bee_types, crash_board, noncrash_board, crashing_volant_
     crashing_volants.setdefault("collided", {})
     crashing_volants.setdefault("exhausted", {})
     crashing_volants.setdefault("headon", {})
+    crashing_volants.setdefault("gobbled", {})
     crashing_volants.setdefault("seeds", {})
 
     for board, volants in ((crash_board, crashing_volants_summary), (noncrash_board, noncrash_volants)):
         for bee_id, bee_details in volants.items():
             game.boards[board].inflight[bee_id] = bee_details
 
-    assert all(board.calculate_score() == DEFAULT_GAME_PARAMETERS.hive_score_factor for board in game.boards)
+    assert all(board.calculate_score() == DEFAULT_GAME_PARAMETERS.hive_score_factor + DEFAULT_GAME_PARAMETERS.venus_score_factor for board in game.boards)
 
     crashes = game.detect_crashes()
 
-    assert all(board.calculate_score() == DEFAULT_GAME_PARAMETERS.hive_score_factor
+    assert all(board.calculate_score() == DEFAULT_GAME_PARAMETERS.hive_score_factor + DEFAULT_GAME_PARAMETERS.venus_score_factor
                                             for i, board in enumerate(game.boards) if i != crash_board)
     assert (game.boards[crash_board].calculate_score() ==
-            DEFAULT_GAME_PARAMETERS.hive_score_factor + DEFAULT_GAME_PARAMETERS.dead_bee_score_factor * len(crashing_bees_summary))
+            DEFAULT_GAME_PARAMETERS.hive_score_factor + DEFAULT_GAME_PARAMETERS.venus_score_factor + DEFAULT_GAME_PARAMETERS.dead_bee_score_factor * len(crashing_bees_summary))
 
     for board, crashed_bees in enumerate(crashes):
         if board == crash_board:
             assert crashed_bees == crashing_volants
         else:
-            assert crashed_bees == dict(collided={}, headon={}, exhausted={}, seeds={})
+            assert crashed_bees == dict(collided={}, headon={}, exhausted={}, gobbled={}, seeds={})

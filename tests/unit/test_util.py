@@ -1,6 +1,6 @@
 from hiveminder._util import is_even, sign, even_q_in_range, even_q_distance, _first
 import pytest
-from mock.mock import sentinel
+from mock import sentinel
 
 
 @pytest.mark.parametrize("i", range(1, 100))

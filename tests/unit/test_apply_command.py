@@ -2,13 +2,16 @@ from __future__ import absolute_import
 from hiveminder.game import GameState
 from hiveminder.bee import Bee, QueenBee
 from hiveminder.seed import Seed
+from hiveminder.trap_seed import TrapSeed
 from hiveminder.headings import LEGAL_HEADINGS
 from hiveminder.flower import Flower
+from hiveminder.venus_bee_trap import VenusBeeTrap
 from hiveminder.game_params import DEFAULT_GAME_PARAMETERS
 from itertools import product
 from mock import sentinel
 import pytest
 from hiveminder.hive import Hive
+import sys
 
 
 LEGAL_MOVES = {(0, 60),
@@ -211,7 +214,28 @@ def test_apply_flower_command_empty_tile():
     game.apply_commands([dict(entity=sentinel.seed_1, command="flower")])
 
     assert game.boards[0].inflight == {}
-    assert game.boards[0].flowers == (Flower(0, 0, DEFAULT_GAME_PARAMETERS), Flower(4, 5, DEFAULT_GAME_PARAMETERS, expires=12345 + DEFAULT_GAME_PARAMETERS.flower_lifespan))
+    assert game.boards[0].flowers == (Flower(0, 0, DEFAULT_GAME_PARAMETERS),
+                                      Flower(4, 5, DEFAULT_GAME_PARAMETERS, expires=12645))
+    assert game.boards[0].hives == (Hive(9, 9),)
+
+
+def test_apply_venus_command_empty_tile():
+    game = GameState(game_params=DEFAULT_GAME_PARAMETERS,
+                     game_id=sentinel.game_id,
+                     boards=1,
+                     board_width=10,
+                     board_height=10,
+                     hives=((Hive(9, 9),),),
+                     flowers=((Flower(0, 0, DEFAULT_GAME_PARAMETERS),),),
+                     turn_num=12345,
+                     game_length=sentinel.game_length)
+
+    game.boards[0].inflight[sentinel.seed_1] = TrapSeed(4, 5, 0, DEFAULT_GAME_PARAMETERS.trap_seed_lifespan)
+    game.apply_commands([dict(entity=sentinel.seed_1, command="flower")])
+
+    assert game.boards[0].inflight == {}
+    assert game.boards[0].flowers == (Flower(0, 0, DEFAULT_GAME_PARAMETERS),
+                                      VenusBeeTrap(4, 5, DEFAULT_GAME_PARAMETERS, expires=12645))
     assert game.boards[0].hives == (Hive(9, 9),)
 
 
@@ -234,6 +258,45 @@ def test_apply_flower_command_over_existing_flower():
     assert game.boards[0].hives == (Hive(9, 9),)
 
 
+def test_apply_venus_command_over_existing_single_flower():
+    game = GameState(game_params=DEFAULT_GAME_PARAMETERS,
+                     game_id=sentinel.game_id,
+                     boards=1,
+                     board_width=10,
+                     board_height=10,
+                     hives=((Hive(9, 9),),),
+                     flowers=((Flower(0, 0, DEFAULT_GAME_PARAMETERS, sentinel.potency, sentinel.visits),),),
+                     turn_num=12345,
+                     game_length=sentinel.game_length)
+
+    game.boards[0].inflight[sentinel.seed_1] = TrapSeed(0, 0, 0, DEFAULT_GAME_PARAMETERS.trap_seed_lifespan)
+    game.apply_commands([dict(entity=sentinel.seed_1, command="flower")])
+
+    assert game.boards[0].inflight == {sentinel.seed_1: TrapSeed(0, 0, 0, DEFAULT_GAME_PARAMETERS.trap_seed_lifespan)}
+    assert game.boards[0].flowers == (Flower(0, 0, DEFAULT_GAME_PARAMETERS, sentinel.potency, sentinel.visits),)
+    assert game.boards[0].hives == (Hive(9, 9),)
+
+
+def test_apply_venus_command_over_existing_flower():
+    game = GameState(game_params=DEFAULT_GAME_PARAMETERS,
+                     game_id=sentinel.game_id,
+                     boards=1,
+                     board_width=10,
+                     board_height=10,
+                     hives=((Hive(9, 9),),),
+                     flowers=((Flower(0, 0, DEFAULT_GAME_PARAMETERS, sentinel.potency, sentinel.visits), Flower(9, 9, DEFAULT_GAME_PARAMETERS, sentinel.potency, sentinel.visits)),),
+                     turn_num=12345,
+                     game_length=sentinel.game_length)
+
+    game.boards[0].inflight[sentinel.seed_1] = TrapSeed(0, 0, 0, DEFAULT_GAME_PARAMETERS.trap_seed_lifespan)
+    game.apply_commands([dict(entity=sentinel.seed_1, command="flower")])
+
+    assert game.boards[0].inflight == {}
+    assert sorted(map(str, game.boards[0].flowers)) == sorted(map(str, (VenusBeeTrap(0, 0, DEFAULT_GAME_PARAMETERS, 1, 0, expires=12345 + DEFAULT_GAME_PARAMETERS.flower_lifespan),
+                                                                        Flower(9, 9, DEFAULT_GAME_PARAMETERS, sentinel.potency, sentinel.visits))))
+    assert game.boards[0].hives == (Hive(9, 9),)
+
+
 def test_apply_flower_command_over_existing_hive():
     game = GameState(game_params=DEFAULT_GAME_PARAMETERS,
                      game_id=sentinel.game_id,
@@ -251,6 +314,45 @@ def test_apply_flower_command_over_existing_hive():
     assert game.boards[0].inflight == {}
     assert game.boards[0].flowers == (Flower(0, 0, DEFAULT_GAME_PARAMETERS), Flower(9, 9, DEFAULT_GAME_PARAMETERS, expires=12345 + DEFAULT_GAME_PARAMETERS.flower_lifespan))
     assert game.boards[0].hives == ()
+
+
+def test_apply_venus_command_over_existing_single_hive():
+    game = GameState(game_params=DEFAULT_GAME_PARAMETERS,
+                     game_id=sentinel.game_id,
+                     boards=1,
+                     board_width=10,
+                     board_height=10,
+                     hives=((Hive(9, 9),),),
+                     flowers=((Flower(0, 0, DEFAULT_GAME_PARAMETERS),),),
+                     turn_num=12345,
+                     game_length=sentinel.game_length)
+
+    game.boards[0].inflight[sentinel.seed_1] = TrapSeed(9, 9, 0, DEFAULT_GAME_PARAMETERS.trap_seed_lifespan)
+    game.apply_commands([dict(entity=sentinel.seed_1, command="flower")])
+
+    assert game.boards[0].inflight == {sentinel.seed_1:TrapSeed(9, 9, 0, DEFAULT_GAME_PARAMETERS.trap_seed_lifespan)}
+    assert game.boards[0].flowers == (Flower(0, 0, DEFAULT_GAME_PARAMETERS),)
+    assert game.boards[0].hives == (Hive(9, 9),)
+    
+
+def test_apply_venus_command_over_existing_hive():
+    game = GameState(game_params=DEFAULT_GAME_PARAMETERS,
+                     game_id=sentinel.game_id,
+                     boards=1,
+                     board_width=10,
+                     board_height=10,
+                     hives=((Hive(9, 9), Hive(0, 0)),),
+                     flowers=((Flower(0, 0, DEFAULT_GAME_PARAMETERS),),),
+                     turn_num=12345,
+                     game_length=sentinel.game_length)
+
+    game.boards[0].inflight[sentinel.seed_1] = TrapSeed(9, 9, 0, DEFAULT_GAME_PARAMETERS.trap_seed_lifespan)
+    game.apply_commands([dict(entity=sentinel.seed_1, command="flower")])
+
+    assert game.boards[0].inflight == {}
+    assert game.boards[0].flowers == (Flower(0, 0, DEFAULT_GAME_PARAMETERS), VenusBeeTrap(9, 9, DEFAULT_GAME_PARAMETERS, expires=12345 + DEFAULT_GAME_PARAMETERS.flower_lifespan))
+    assert game.boards[0].hives == (Hive(0, 0),)
+
 
 
 def test_bees_can_not_flower():

@@ -17,8 +17,11 @@ GameParameters = namedtuple("GameParameters",
                                                                         # a flower must be visited to generate a seed
                              "flower_visit_potency_ratio",  # The ratio of bee visits for flower potency increases
                              "flower_lifespan",  # How long a flower will live for if it is never visited
-                             "flower_lifespan_visit_impact"  # Extra turns through which a flower will live
+                             "flower_lifespan_visit_impact",  # Extra turns through which a flower will live
                                                              # for every visit from a bee
+                             "trap_seed_probability",  # likelihood that the next seed will be a Venus Bee Trap Seed
+                             "venus_score_factor",  # How your score changes by having a Venus Bee Trap on the board
+                             "trap_seed_lifespan"  # How many turns before a trap seed becomes a Venus Bee Trap
                              ])
 
 
@@ -35,5 +38,8 @@ DEFAULT_GAME_PARAMETERS = GameParameters(launch_probability=0.2,
                                          flower_seed_visit_subsequent_threshold=10,
                                          flower_visit_potency_ratio=10,
                                          flower_lifespan=300,
-                                         flower_lifespan_visit_impact=10
+                                         flower_lifespan_visit_impact=10,
+                                         trap_seed_probability=0.5,
+                                         venus_score_factor=-50,
+                                         trap_seed_lifespan=6
                                          )

@@ -1,3 +1,4 @@
+from hiveminder.flower import Flower
 from hiveminder.utils import (distance_between_hex_cells, nearest_hex_cell,
                               furthest_hex_cell, apply_command_and_advance,
                               is_on_course_with)
@@ -154,7 +155,7 @@ def test_apply_command_and_advance_no_command_bee_saved_from_exhaustion_by_flowe
     crashed, landed, lost = apply_command_and_advance(board_width=10,
                                                       board_height=10,
                                                       hives=[],
-                                                      flowers=[(0, 1, DEFAULT_GAME_PARAMETERS._asdict(), 1, 0, 1000)],
+                                                      flowers=[Flower(0, 1, DEFAULT_GAME_PARAMETERS, 1, 0, 1000).to_json()],
                                                       inflight={"abee": ("Bee", 0, 0, 0, 0, DEFAULT_GAME_PARAMETERS._asdict(), 0)},
                                                       turn_num=0,
                                                       cmd=None)

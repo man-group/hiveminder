@@ -72,7 +72,10 @@ def test_serialise_deserialise_game_state_to_json(nboards):
                             flower_seed_visit_subsequent_threshold=10,
                             flower_visit_potency_ratio=10,
                             flower_lifespan=100,
-                            flower_lifespan_visit_impact=30)
+                            flower_lifespan_visit_impact=30,
+                            trap_seed_probability=1,
+                            venus_score_factor=-50,
+                            trap_seed_lifespan=10)
 
     game = GameState(game_params=params,
                      game_id=sentinel.game_id,

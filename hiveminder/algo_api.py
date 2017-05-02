@@ -41,11 +41,13 @@ def move():
             landed = data["landed"]
             lost = data["lost"]
             received = data["received"]
-                    
+
             boards = data["boards"]
             algos = data["algos"]
             assert len(boards) == len(algos)
-            
+
+            scores = [board['score'] for board in state['boards']]
+
             results = [_algos[algo_name].fn(state["boards"][board]["boardWidth"],
                                             state["boards"][board]["boardHeight"],
                                             state["boards"][board]["hives"],
@@ -55,7 +57,7 @@ def move():
                                             lost[board],
                                             received[board],
                                             landed[board],
-                                            [state["boards"][board]["score"]],
+                                            scores,
                                             board,
                                             state["gameId"],
                                             state["turnNum"])
@@ -106,6 +108,8 @@ def game_over():
         algos = data["algos"]
         assert len(boards) == len(algos)
         
+        scores = [board['score'] for board in state['boards']]
+        
         for board, algo_name in zip(boards, algos):
             event_handler = _algos[algo_name].on_game_over
             if event_handler is not None:
@@ -118,7 +122,7 @@ def game_over():
                               lost[board],
                               received[board],
                               landed[board],
-                              [state["boards"][board]["score"]],
+                              scores,
                               board,
                               state["gameId"],
                               state["turnNum"])

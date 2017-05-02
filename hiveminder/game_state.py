@@ -52,10 +52,10 @@ class GameState(object):
 
         for board in self.boards:
             board._connect_to_neighbours(self.boards)
-    
+
     def game_over(self):
         return self.turn_num >= self.game_length
-        
+
     def launch_bees(self, turn_num):
         rng = rngs[self.game_id]
         for board in self.boards:
@@ -69,8 +69,11 @@ class GameState(object):
 
     def visit_flowers(self):
         rng = rngs[self.game_id]
-        for board in self.boards:
-            board.visit_flowers(rng)
+        return [board.visit_flowers(rng) for board in self.boards]
+
+    def visit_venus(self):
+        rng = rngs[self.game_id]
+        return [board.visit_venus(rng) for board in self.boards]
 
     def move_volants(self):
         lost_volants = [None] * len(self.boards)
@@ -97,6 +100,10 @@ class GameState(object):
         for board in self.boards:
             board.remove_dead_flowers(self.turn_num)
 
+    def turn_trap_seeds_to_venus(self):
+        for board in self.boards:
+            board.turn_trap_seeds_to_venus(self.turn_num)
+
     def turn(self, commands):
         self.apply_commands(commands)
 
@@ -106,6 +113,8 @@ class GameState(object):
 
         self.visit_flowers()
 
+        self.turn_trap_seeds_to_venus()
+        
         landed_bees = self.land_bees()
 
         crashed = self.detect_crashes()

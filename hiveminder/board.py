@@ -1,13 +1,15 @@
 from __future__ import absolute_import
 import collections
 from uuid import uuid4
-from copy import  copy
+from copy import copy
 from random import choice
 from .bee import Bee, QueenBee
 from .seed import Seed
+from.trap_seed import TrapSeed
 from .hive import Hive
 from .headings import LEGAL_NEW_HEADINGS
 from .flower import Flower
+from .venus_bee_trap import VenusBeeTrap
 from .game_params import GameParameters
 
 
@@ -16,7 +18,7 @@ def _del_at_coordinate(items, x, y):
 
 
 def volant_from_json(json):
-    return {'Seed': Seed, 'Bee': Bee, 'QueenBee': QueenBee}[json[0]].from_json(json)
+    return {'Seed': Seed, 'Bee': Bee, 'QueenBee': QueenBee, 'TrapSeed': TrapSeed}[json[0]].from_json(json)
 
 
 class Board(object):
@@ -40,9 +42,13 @@ class Board(object):
         self._incoming = {}
 
     def calculate_score(self):
+        healthy_flowers = [flower for flower in self.flowers if not isinstance(flower, VenusBeeTrap)]
+        venus_bee_traps = [flower for flower in self.flowers if isinstance(flower, VenusBeeTrap)]
+
         return (self.dead_bees * self.game_params.dead_bee_score_factor +
-                # All boards start with 1 hive & 1 flower; board score starts at self.game_params.hive_score_factor + self.game_params.flower_score_factor
-                len(self.hives) * self.game_params.hive_score_factor + len(self.flowers) * self.game_params.flower_score_factor +
+                len(self.hives) * self.game_params.hive_score_factor +
+                len(healthy_flowers) * self.game_params.flower_score_factor +
+                len(venus_bee_traps) * self.game_params.venus_score_factor +
                 sum(hive.nectar for hive in self.hives) * self.game_params.nectar_score_factor)
 
     def launch_bees(self, rng, turn_num):
@@ -58,12 +64,17 @@ class Board(object):
                                                   self.game_params.initial_energy, self.game_params)
 
     def summary(self):
+        healthy_flowers = [flower for flower in self.flowers if not isinstance(flower, VenusBeeTrap)]
+        venus_bee_traps = [flower for flower in self.flowers if isinstance(flower, VenusBeeTrap)]
+
         return collections.OrderedDict([('Dead Bees', self.dead_bees),
                 ('Dead bee score', self.dead_bees * self.game_params.dead_bee_score_factor),
                 ('Number of hives', len(self.hives)),
                 ('Hive score', len(self.hives) * self.game_params.hive_score_factor),
-                ('Number of flowers', len(self.flowers)),
-                ('Flower score', len(self.flowers) * self.game_params.flower_score_factor),
+                ('Number of healthy flowers', len(healthy_flowers)),
+                ('Flower score', len(healthy_flowers) * self.game_params.flower_score_factor),
+                ('Number of venus bee traps', len(venus_bee_traps)),
+                ('Venus score', len(venus_bee_traps) * self.game_params.venus_score_factor),
                 ('Nectar collected', sum(hive.nectar for hive in self.hives)),
                 ('Nectar score', sum(hive.nectar for hive in self.hives) * self.game_params.nectar_score_factor),
                 ('Total Score', self.calculate_score())])
@@ -76,21 +87,27 @@ class Board(object):
             if isinstance(volant, Bee):
                 bee_occupied.setdefault((volant.x, volant.y), set()).add(volant_id)
                 opposing_states.add(copy(volant).advance(reverse=True).xyh)
-            elif isinstance(volant, Seed):
+            elif isinstance(volant, (Seed, TrapSeed)):
                 seed_occupied.setdefault((volant.x, volant.y), set()).add(volant_id)
 
-        collided = {bee for _, bees in bee_occupied.items() for bee in bees if len(bees) > 1}
-        exhaused = {bee_id for bee_id, bee in self.inflight.items()
-                    if isinstance(bee, Bee) and bee.energy < 0} - collided
+        venus_bee_traps = {(flower.x, flower.y): flower for flower in self.flowers
+                           if isinstance(flower, VenusBeeTrap)}
+
+        gobbled = {bee_id for bee_id, bee in self.inflight.items()
+                   if isinstance(bee, Bee) and (bee.x, bee.y) in venus_bee_traps}
+        collided = {bee for _, bees in bee_occupied.items() for bee in bees if len(bees) > 1} - gobbled
+        exhausted = {bee_id for bee_id, bee in self.inflight.items()
+                     if isinstance(bee, Bee) and bee.energy < 0} - gobbled - collided
         headon = {bee_id for bee_id, bee in self.inflight.items()
-                  if isinstance(bee, Bee) and bee.xyh in opposing_states} - exhaused - collided
-        self.dead_bees += len(collided) + len(exhaused) + len(headon)
+                  if isinstance(bee, Bee) and bee.xyh in opposing_states} - gobbled - exhausted - collided
+        self.dead_bees += len(collided) + len(exhausted) + len(headon) + len(gobbled)
 
         seeds_collided = {seed for _, seeds in seed_occupied.items() for seed in seeds if len(seeds) > 1}
 
         return dict(collided={bee_id: self.inflight.pop(bee_id) for bee_id in collided},
-                    exhausted={bee_id: self.inflight.pop(bee_id) for bee_id in exhaused},
+                    exhausted={bee_id: self.inflight.pop(bee_id) for bee_id in exhausted},
                     headon={bee_id: self.inflight.pop(bee_id) for bee_id in headon},
+                    gobbled={bee_id: self.inflight.pop(bee_id) for bee_id in gobbled},
                     seeds={seed_id: self.inflight.pop(seed_id) for seed_id in seeds_collided},)
 
     def land_bees(self):
@@ -109,17 +126,24 @@ class Board(object):
         return {bee_id: self.inflight.pop(bee_id) for bee_id in landed}
 
     def visit_flowers(self, rng):
-        flowers = {(flower.x, flower.y): flower for flower in self.flowers}
+        # Visiting Healthy Flowers. Visiting a Venus Bee Trap is a "collision" as the bee dies
+        healthy_flowers = {(flower.x, flower.y): flower for flower in self.flowers if not isinstance(flower, VenusBeeTrap)}
 
-        vists = {bee_id: flowers[bee.x, bee.y] for bee_id, bee in self.inflight.items()
-                 if isinstance(bee, Bee) and (bee.x, bee.y) in flowers}
+        healthy_visits = {bee_id: healthy_flowers[bee.x, bee.y] for bee_id, bee in self.inflight.items()
+                          if isinstance(bee, Bee) and (bee.x, bee.y) in healthy_flowers}
 
-        for bee_id, flower in vists.items():
+        for bee_id, flower in healthy_visits.items():
+
             self.inflight[bee_id] = self.inflight[bee_id].drink(flower.potency)
+
             launch_seed = flower.visit()
+            heading = rng.choice(list(LEGAL_NEW_HEADINGS))
+
             if launch_seed:
-                heading = rng.choice(list(LEGAL_NEW_HEADINGS))
-                self.inflight[str(uuid4())] = Seed(flower.x, flower.y, heading)
+                if rng.random() > self.game_params.trap_seed_probability:
+                    self.inflight[str(uuid4())] = Seed(flower.x, flower.y, heading)
+                else:
+                    self.inflight[str(uuid4())] = TrapSeed(flower.x, flower.y, heading, self.game_params.trap_seed_lifespan)
 
     def move_volants(self):
         for volant_id, volant in self.inflight.items():
@@ -177,6 +201,21 @@ class Board(object):
                 self.flowers += (Flower(cmd_volant.x, cmd_volant.y, self.game_params,
                                         expires=turn_num + self.game_params.flower_lifespan),)
                 del self.inflight[cmd_volant_id]
+
+            elif isinstance(cmd_volant, TrapSeed) and cmd_heading == "flower":
+                # If there is already a hive or a flower on this tile remove it
+                new_hives = _del_at_coordinate(self.hives, cmd_volant.x, cmd_volant.y)
+                new_flowers = _del_at_coordinate(self.flowers, cmd_volant.x, cmd_volant.y)
+                
+                if (len(self.hives)==0 or len(new_hives) > 0) and (len(self.flowers)==0 or len(new_flowers) > 0):
+                    self.hives = new_hives
+                    self.flowers = new_flowers
+
+                    # Add new flower
+                    self.flowers += (VenusBeeTrap(cmd_volant.x, cmd_volant.y, self.game_params,
+                                                  expires=turn_num + self.game_params.flower_lifespan),)
+                    del self.inflight[cmd_volant_id]
+
             elif isinstance(cmd_volant, QueenBee) and 'create_hive' == cmd_heading:
                 try:
                     # If there is a flower on this tile remove it
@@ -185,9 +224,11 @@ class Board(object):
                     del self.inflight[cmd_volant_id]
                 except Exception as e:
                     raise RuntimeError("Can not create hive for this bee {} {}".format(cmd_volant, e))
+
             elif cmd_heading not in LEGAL_NEW_HEADINGS[cmd_volant.heading]:
                 raise RuntimeError("Can not rotate to heading '{}' from heading '{}'.".format(cmd_heading,
                                                                                               cmd_volant.heading))
+
             else:
                 cmd_volant.heading = cmd_heading
 
@@ -196,13 +237,24 @@ class Board(object):
             if flower.expires is None:
                 raise RuntimeError("Flower expiry is None")
 
-        unexpired_flowers = tuple(flower for flower in self.flowers if flower.expires > turn_num)
+        unexpired_healthy_flowers = tuple(flower for flower in self.flowers if flower.expires > turn_num and not isinstance(flower, VenusBeeTrap))
+        unexpired_venus_flowers = tuple(flower for flower in self.flowers if flower.expires > turn_num and isinstance(flower, VenusBeeTrap))
+        expired_healthy_flowers = tuple(flower for flower in self.flowers if flower.expires <= turn_num and not isinstance(flower, VenusBeeTrap))
 
-        # If there are no flowers left on the board we need to keep at least one!
-        if unexpired_flowers:
-            self.flowers = unexpired_flowers
-        elif self.flowers:
-            self.flowers = (choice(self.flowers),)
+        # If there are no flowers left on the board we need to keep at least one that isn't a VenusBeeTrap!
+        if unexpired_healthy_flowers:
+            self.flowers = unexpired_healthy_flowers + unexpired_venus_flowers
+        elif expired_healthy_flowers:
+            self.flowers = (choice(expired_healthy_flowers),) + unexpired_venus_flowers
+        else:
+            self.flowers = unexpired_venus_flowers
+
+    def turn_trap_seeds_to_venus(self, turn_num):
+        will_make_flowers = [volant_id for volant_id, volant in self.inflight.items()
+                             if isinstance(volant, TrapSeed) and volant.lifespan < 0]
+        
+        for trap_seed_id in will_make_flowers:
+            self.apply_command(dict(entity=trap_seed_id, command="flower"), turn_num)
 
     def to_json(self):
         return {"boardWidth": self.board_width,

@@ -68,13 +68,17 @@ height:100%;
 
 .hive.landed { background-image: url("/static/img/hivelanded.png"); }
 
-.flower[potency="1"] { background-image: url("/static/img/flower1.png"); }
+.flower[potency="1"][type="Flower"] { background-image: url("/static/img/flower1.png"); }
 
-.flower[potency="2"] { background-image: url("/static/img/flower2.png"); }
+.flower[potency="2"][type="Flower"] { background-image: url("/static/img/flower2.png"); }
 
-.flower[potency="3"] { background-image: url("/static/img/flower3.png"); }
+.flower[potency="3"][type="Flower"] { background-image: url("/static/img/flower3.png"); }
 
-.flower.dead{ background-image: url("/static/img/flowerx.png"); }
+.flower[type="VenusBeeTrap"] { background-image: url("/static/img/venusBeeTrap.png"); }
+
+.flower[type="Flower"].dead{ background-image: url("/static/img/flowerx.png"); }
+
+.flower[type="VenusBeeTrap"].dead{ background-image: url("/static/img/venusBeeTrapx.png"); }
 
 .bee[heading="0"][type="Bee"] { background-image: url("/static/img/bee0.png"); }
 .bee[heading="60"][type="Bee"] { background-image: url("/static/img/bee60.png"); }
@@ -174,12 +178,19 @@ height:100%;
 .crash[crash_type="collided"], .crash[crash_type="seeds"] { background-image: url("/static/img/collided.png"); }
 .crash[crash_type="exhausted"] {background-image: url("/static/img/exhausted.png"); }
 
-.seed[heading="0"] { background-image: url("/static/img/seed0.png"); }
-.seed[heading="60"] { background-image: url("/static/img/seed60.png"); }
-.seed[heading="120"] { background-image: url("/static/img/seed120.png"); }
-.seed[heading="180"] { background-image: url("/static/img/seed180.png"); }
-.seed[heading="-120"] { background-image: url("/static/img/seed-120.png"); }
-.seed[heading="-60"] { background-image: url("/static/img/seed-60.png"); }
+.seed[heading="0"][type="Seed"] { background-image: url("/static/img/seed0.png"); }
+.seed[heading="60"][type="Seed"] { background-image: url("/static/img/seed60.png"); }
+.seed[heading="120"][type="Seed"] { background-image: url("/static/img/seed120.png"); }
+.seed[heading="180"][type="Seed"] { background-image: url("/static/img/seed180.png"); }
+.seed[heading="-120"][type="Seed"] { background-image: url("/static/img/seed-120.png"); }
+.seed[heading="-60"][type="Seed"] { background-image: url("/static/img/seed-60.png"); }
+
+.seed[heading="0"][type="TrapSeed"] { background-image: url("/static/img/trapseed0.png"); }
+.seed[heading="60"][type="TrapSeed"] { background-image: url("/static/img/trapseed60.png"); }
+.seed[heading="120"][type="TrapSeed"] { background-image: url("/static/img/trapseed120.png"); }
+.seed[heading="180"][type="TrapSeed"] { background-image: url("/static/img/trapseed180.png"); }
+.seed[heading="-120"][type="TrapSeed"] { background-image: url("/static/img/trapseed-120.png"); }
+.seed[heading="-60"][type="TrapSeed"] { background-image: url("/static/img/trapseed-60.png"); }
 
 .col {
 position: absolute;
@@ -282,7 +293,7 @@ text-overflow: ellipsis;
 }
 
 #multiscoreboard {
-top: 270pt;
+top: 300pt;
 }
 
 #multiscoreboard.score td, #multiscoreboard.score  th {

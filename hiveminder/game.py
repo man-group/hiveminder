@@ -8,6 +8,14 @@ from .game_state import rngs, GameState
 from hiveminder._util import even_q_in_range as in_range
 
 
+class SynchronousExecutor(object):
+    def __init__(self, max_workers=None):
+        pass
+    
+    def map(self, func, *iterables, **kwargs):
+        return map(func, *iterables)
+
+
 def make_hives(n, board_width, board_height, rng):
     all_possible_sites = list(product(range(1, board_width - 1), range(1, board_height - 1)))
     return tuple(Hive(*site) for site in rng.sample(all_possible_sites, n))
@@ -54,11 +62,11 @@ def initialise_game(game_params, boards, board_width, board_height, num_hives, n
                      flowers=flowers,
                      game_length=game_length)
 
-    
-def game(board_width, board_height, num_hives, num_flowers, game_length, algos, game_params):
+   
+def game(board_width, board_height, num_hives, num_flowers, game_length, algos, game_params, pool=SynchronousExecutor()):
     algo_names = list(algos.keys())
     algos = list(algos.values())
-
+    
     game_state = initialise_game(game_params,
                                  len(algos),
                                  board_width=board_width,
@@ -66,8 +74,8 @@ def game(board_width, board_height, num_hives, num_flowers, game_length, algos, 
                                  num_hives=num_hives,
                                  num_flowers=num_flowers,
                                  game_length=game_length)
-    
-    for i, algo, board in zip(range(len(algos)), algos, game_state.boards):
+
+    def prepare_algo(i, algo, board):
         if algo.on_start_game is not None:
             board_json = board.to_json()
             algo.on_start_game(board_json['boardWidth'],
@@ -78,8 +86,10 @@ def game(board_width, board_height, num_hives, num_flowers, game_length, algos, 
                                i,
                                game_state.game_id,
                                game_params)
+            
+    list(pool.map(prepare_algo, range(len(algos)), algos, game_state.boards))
 
-    crashed = [dict(headon={}, collided={}, exhausted={})] * len(algos)
+    crashed = [dict(headon={}, collided={}, exhausted={}, gobbled={}, seeds={})] * len(algos)
     landed_bees = [{}] * len(algos)
     lost_volants = [{}] * len(algos)
     received_volants = [{}] * len(algos)
@@ -92,29 +102,32 @@ def game(board_width, board_height, num_hives, num_flowers, game_length, algos, 
         scores = [board['score'] for board in gamestate_json['boards']]
 
         print(dict(zip(algo_names, scores)))
+        
+        def call_algo(i, algo):
+            return algo.fn(gamestate_json['boards'][i]['boardWidth'],
+                           gamestate_json['boards'][i]['boardHeight'],
+                           gamestate_json['boards'][i]['hives'],
+                           gamestate_json['boards'][i]['flowers'],
+                           gamestate_json['boards'][i]['inflight'],
+                           {classification: {crashed_id: crashed_item.to_json()
+                                             for crashed_id, crashed_item in crashes.items()}
+                            for classification, crashes in crashed[i].items()},
+                           {volant_id: volant.to_json() for volant_id, volant in lost_volants[i].items()},
+                           {volant_id: volant.to_json() for volant_id, volant in received_volants[i].items()},
+                           {bee_id: bee.to_json() for bee_id, bee in landed_bees[i].items()},
+                           scores,
+                           i,
+                           gamestate_json['gameId'],
+                           game_state.turn_num)
 
-        commands = [algo.fn(gamestate_json['boards'][i]['boardWidth'],
-                            gamestate_json['boards'][i]['boardHeight'],
-                            gamestate_json['boards'][i]['hives'],
-                            gamestate_json['boards'][i]['flowers'],
-                            gamestate_json['boards'][i]['inflight'],
-                            {classification: {crashed_id: crashed_item.to_json()
-                                              for crashed_id, crashed_item in crashes.items()}
-                             for classification, crashes in crashed[i].items()},
-                            {volant_id: volant.to_json() for volant_id, volant in lost_volants[i].items()},
-                            {volant_id: volant.to_json() for volant_id, volant in received_volants[i].items()},
-                            {bee_id: bee.to_json() for bee_id, bee in landed_bees[i].items()},
-                            scores,
-                            i,
-                            gamestate_json['gameId'],
-                            game_state.turn_num) for i, algo in enumerate(algos)]
+        commands = list(pool.map(call_algo, *zip(*enumerate(algos))))
 
         game_state, crashed, landed_bees, lost_volants, received_volants = game_state.turn(commands)
 
     scores = [board['score'] for board in gamestate_json['boards']]
     print_game_result(game_state, algo_names)
 
-    for i, algo, board in zip(range(len(algos)), algos, game_state.boards):
+    def farewell_algo(i, algo, board):
         if algo.on_game_over is not None:
             board_json = board.to_json()
             algo.on_game_over(board_json['boardWidth'],
@@ -132,9 +145,12 @@ def game(board_width, board_height, num_hives, num_flowers, game_length, algos, 
                               i,
                               game_state.game_id,
                               game_state.turn_num)
+
+    list(pool.map(farewell_algo, range(len(algos)), algos, game_state.boards))
+    
     return game_state
 
-    
+
 def print_game_result(game_state, algo_names):
     winners = calculate_winner(game_state)
     if len(winners) == 1:

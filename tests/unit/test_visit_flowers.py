@@ -25,7 +25,6 @@ def test_visit_flowers_does_not_feed_bee_if_not_on_flower():
     assert game.boards[0].inflight == {sentinel.bee_1: Bee(5, 4, 0, 10, DEFAULT_GAME_PARAMETERS,  1)}
 
 
-@patch.dict("hiveminder.game_state.rngs", {sentinel.game_id: sentinel.rng})
 def test_visit_flowers_single_bee_single_flower():
     game = GameState(game_params=DEFAULT_GAME_PARAMETERS,
                      game_id=sentinel.game_id,
@@ -42,7 +41,6 @@ def test_visit_flowers_single_bee_single_flower():
     assert game.boards[0].inflight == {sentinel.bee_1: Bee(5, 5, 0, 10 + DEFAULT_GAME_PARAMETERS.bee_energy_boost_per_nectar, DEFAULT_GAME_PARAMETERS,  2)}
 
 
-@patch.dict("hiveminder.game_state.rngs", {sentinel.game_id: sentinel.rng})
 def test_visit_flowers_two_bees_two_flowers():
     game = GameState(game_params=DEFAULT_GAME_PARAMETERS,
                      game_id=sentinel.game_id,
@@ -62,7 +60,6 @@ def test_visit_flowers_two_bees_two_flowers():
                                        sentinel.bee_2: Bee(5, 4, 0, 10 + DEFAULT_GAME_PARAMETERS.bee_energy_boost_per_nectar, DEFAULT_GAME_PARAMETERS,  1), }
 
 
-@patch.dict("hiveminder.game_state.rngs", {sentinel.game_id: sentinel.rng})
 def test_visit_flowers_two_bees_two_flowers_more_potent_and_live_longer():
     flower1 = Flower(5, 5, DEFAULT_GAME_PARAMETERS, 3, expires=DEFAULT_GAME_PARAMETERS.flower_lifespan)
     flower2 = Flower(5, 4, DEFAULT_GAME_PARAMETERS, 2, expires=DEFAULT_GAME_PARAMETERS.flower_lifespan)
@@ -105,7 +102,7 @@ def test_seed_does_not_visit_flower():
 SEED_GENERATION_VISITS = [DEFAULT_GAME_PARAMETERS.flower_seed_visit_initial_threshold +
                            (DEFAULT_GAME_PARAMETERS.flower_seed_visit_subsequent_threshold * x) for x in range(0, 8)]
 
-@patch.dict("hiveminder.game_state.rngs", {sentinel.game_id: Mock(name="rng")})
+@patch.dict("hiveminder.game_state.rngs", {sentinel.game_id: Mock(name="rng", **{"random.return_value": 1})})
 @patch("hiveminder.board.uuid4", return_value=sentinel.uuid)
 @pytest.mark.parametrize('visits', SEED_GENERATION_VISITS)
 def test_visiting_flower_creates_seed_every_ten_visits(_, visits):
@@ -125,7 +122,6 @@ def test_visiting_flower_creates_seed_every_ten_visits(_, visits):
                                        'sentinel.uuid': Seed(5, 5, ANY)}
 
 
-@patch.dict("hiveminder.game_state.rngs", {sentinel.game_id: sentinel.rng})
 @pytest.mark.parametrize('visits', [n for n in range(0, 45) if n not in SEED_GENERATION_VISITS])
 def test_visiting_flower_does_not_create_seeds_when_not_seed_threshold(visits):
     game = GameState(game_params=DEFAULT_GAME_PARAMETERS,

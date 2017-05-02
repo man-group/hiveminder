@@ -13,11 +13,11 @@ _algos = {}
 TIME_LIMIT = timedelta(microseconds=200000)
 
 
-def _time_limit(fn, name):
+def _time_limit(fn, name, time_limit=TIME_LIMIT):
     def __time_limit(*args, **kwargs):
         then = datetime.now()
         result = fn(*args, **kwargs)
-        if ((datetime.now() - then) > TIME_LIMIT):
+        if ((datetime.now() - then) > time_limit):
             print("Timeout calling algo {}".format(name))
             return None
         else:

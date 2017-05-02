@@ -22,7 +22,11 @@ def test_launch_bees_single_board_single_hive_probability_one():
                             flower_seed_visit_subsequent_threshold=10,
                             flower_visit_potency_ratio=10,
                             flower_lifespan=100,
-                            flower_lifespan_visit_impact=10)
+                            flower_lifespan_visit_impact=10,
+                            trap_seed_probability=1,
+                            venus_score_factor=-50,
+                            trap_seed_lifespan=10
+                            )
 
     game = GameState(game_params=params,
                      game_id=sentinel.game_id,
@@ -60,7 +64,11 @@ def test_launch_bees_single_board_single_hive_probability_zero():
                             flower_seed_visit_subsequent_threshold=10,
                             flower_visit_potency_ratio=10,
                             flower_lifespan=100,
-                            flower_lifespan_visit_impact=10)
+                            flower_lifespan_visit_impact=10,
+                            trap_seed_probability=1,
+                            venus_score_factor=-50,
+                            trap_seed_lifespan=10
+                            )
     game = GameState(game_params=params,
                      game_id=sentinel.game_id,
                      boards=1,
@@ -91,7 +99,10 @@ def test_launch_bees_enough_nectar_get_queen_then_normal_bee():
                             flower_seed_visit_subsequent_threshold=10,
                             flower_visit_potency_ratio=10,
                             flower_lifespan=100,
-                            flower_lifespan_visit_impact=10)
+                            flower_lifespan_visit_impact=10,
+                            trap_seed_probability=1,
+                            venus_score_factor=-50,
+                            trap_seed_lifespan=10)
     game = GameState(game_params=params,
                      game_id=sentinel.game_id,
                      boards=1,

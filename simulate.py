@@ -6,6 +6,7 @@ from hiveminder import game
 from algos import *
 from hiveminder.algos import _algos
 from hiveminder.game_params import DEFAULT_GAME_PARAMETERS
+from sys import argv
 
 
 def run_game(no_of_turns):
@@ -19,4 +20,4 @@ def run_game(no_of_turns):
 
 
 if __name__ == "__main__":
-    run_game(no_of_turns=1000)
+    run_game(no_of_turns=int(argv[1]) if len(argv)>=2 else 1000)

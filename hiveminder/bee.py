@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 from .volant import Volant
 from .hive import Hive
-from.game_params import GameParameters
+from .game_params import GameParameters
 
 
 class Bee(Volant):

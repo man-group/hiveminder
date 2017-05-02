@@ -38,7 +38,8 @@ def newgame():
 @app.route('/turn', methods=['POST'])
 def take_turn():
     try:
-        game_state, crashed, landed, lost_volants, received_volants = GameState.from_json(request.json).turn(request.json["commands"])
+        state = GameState.from_json(request.json)
+        game_state, crashed, landed, lost_volants, received_volants = state.turn(request.json["commands"])
         return json.dumps({"ok" : {"state": game_state.to_json(),
                                    "crashed": [{classification: {crashed_id: crashed_item.to_json()
                                                                  for crashed_id, crashed_item in crashes.items()}

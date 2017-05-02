@@ -292,9 +292,9 @@ function setSeeds(seeds, clazz) {
         var x = seed_details[1];
         var y = seed_details[2];
         var heading = seed_details[3];
-        if (type=="Seed") {
+        if (type=="Seed" || type=="TrapSeed") {
             var seed = $("." + clazz + "[x=" + x +"][y=" + y + "]>.seed");
-            seed.attr("volant_id", volant_id).attr("heading", heading);
+            seed.attr("volant_id", volant_id).attr("heading", heading).attr("type", type);
         }
     });
 }
@@ -344,10 +344,11 @@ function setFlowers(flowers, turnNum, clazz) {
     $("#board ." + clazz + ">.scenary.flower").removeClass("flower").attr("size", "").removeClass("dead");
     
     $.each(flowers, function(i, flower) {
-        var x = flower[0];
+    	var type = flower[flower.length-1]
+    	var x = flower[0];
         var y = flower[1];
         var potency = flower[3];
-        var flwr = $("." + clazz + "[x=" + x +"][y=" + y + "]>.scenary").addClass("flower").attr("potency", potency);
+        var flwr = $("." + clazz + "[x=" + x +"][y=" + y + "]>.scenary").addClass("flower").attr("potency", potency).attr("type", type);
         if ((flower[5] - 10) < turnNum) {
             flwr.addClass("dead");
         }
@@ -620,13 +621,28 @@ function displayScore(game) {
     }
 
     $("#turn").text(game.state.turnNum);
+    
+    var healthy_flowers = [];
+    var venus_traps = [];
+    
+    for (var i=0; i<game.state.boards[0].flowers.length; i++) {
+    	if (game.state.boards[0].flowers[i][6]=='Flower'){
+    		healthy_flowers.push(game.state.boards[0].flowers[i]);
+    	}
+    	if (game.state.boards[0].flowers[i][6]=='VenusBeeTrap'){
+    		venus_traps.push(game.state.boards[0].flowers[i]);
+    	}
+    }
+    
     $("#score").text(game.state.boards[0].score);
     setTextAndHighlightChange($("#ndeadbees"), game.state.boards[0].deadbees);
     setTextAndHighlightChange($("#pdeadbees"), game.state.boards[0].deadbees * -3);
     setTextAndHighlightChange($("#nhives"), game.state.boards[0].hives.length);
-    setTextAndHighlightChange($("#phives"), game.state.boards[0].hives.length * 100);
-    setTextAndHighlightChange($("#nflowers"), game.state.boards[0].flowers.length);
-    setTextAndHighlightChange($("#pflowers"), game.state.boards[0].flowers.length * 50);
+    setTextAndHighlightChange($("#phives"), game.state.boards[0].hives.length * 200);
+    setTextAndHighlightChange($("#nflowers"), healthy_flowers.length);
+    setTextAndHighlightChange($("#pflowers"), healthy_flowers.length * 50);
+    setTextAndHighlightChange($("#nvenus"), venus_traps.length);
+    setTextAndHighlightChange($("#pvenus"), venus_traps.length * -50);
     var nectar = 0;
     $.each(game.state.boards[0].hives, function(i, hive) {
        nectar += hive[2];
