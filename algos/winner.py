@@ -3,7 +3,11 @@ This is the winning algo from the Man AHL Coder Prize 2017
 Written by Matthew Ridley from the University of Oxford
 """
 from hiveminder import algo_player
-from time import perf_counter
+try:
+    from time import perf_counter
+except ImportError:
+    from time import clock as perf_counter # work around for python 2, will not be high enough resolution on Windows
+from copy import copy
 
 TIME_LIMIT = 140000/1e6
 PRUNING_FACTOR = 6
@@ -348,10 +352,10 @@ def possible_moves(board_json, turn_num):
 
 def copy_board(board_state):
     return {
-        "hives": [h.copy() for h in board_state["hives"]],
+        "hives": [copy(h) for h in board_state["hives"]],
         "deadbees": board_state["deadbees"],
-        "flowers": [f.copy() for f in board_state["flowers"]],
-        "inflight": {k: v.copy() for k, v in board_state["inflight"].items()}}
+        "flowers": [copy(f) for f in board_state["flowers"]],
+        "inflight": {k: copy(v) for k, v in board_state["inflight"].items()}}
 
 def apply_command(board_state, cmd, turn_num):
     if cmd is not None:
