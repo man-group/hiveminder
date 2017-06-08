@@ -1,6 +1,6 @@
 # ![HiveMinder](hiveminder/static/img/hiveminder.png)
 
-Bee logistics game for the Man AHL Coder Prize.
+Bee logistics game for the [Man AHL Coder Prize.](http://www.ahl.com/coderprize)
 
 You can [play the demo online.](http://hiveminder.pythonanywhere.com/)
 
