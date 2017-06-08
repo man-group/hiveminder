@@ -518,7 +518,7 @@ def light_converter(board_json):
             "inflight": {k: (v[:5]+v[6:] if v[0] not in ["Seed", "TrapSeed"] else v) for k, v in board_json["inflight"].items()},
             "deadbees": board_json["deadbees"]}
 
-@algo_player(name="ignorer",
+@algo_player(name="WinningAlgo",
              description="By Matthew Ridley")
 def template_algo(board_width, board_height, hives, flowers, inflight, crashed,
                   lost_volants, received_volants, landed, scores, player_id, game_id, turn_num):
